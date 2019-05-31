@@ -31,8 +31,8 @@ class myMainWindow(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.move(300, 300)
-        self.resize(900, 800)
+        self.move(300, 100)
+        self.resize(900, 600)
         self.setWindowTitle('Image Style Transfer')
         self.setCentralWidget(myTabWidget())
 

@@ -11,8 +11,10 @@ import requests
 from requests_toolbelt import MultipartEncoder
 
 global flag 
-flag = 0
+flag = 0    # The index (start from 1) of the selected label, 0 - nothing selected
 class picLabel(QLabel):
+    """ Define a label in the preStyle group
+    """
 
     def __init__(self, parent, index, picName = "default.png", width = 200, height = 200):
         super(QLabel, self).__init__()
@@ -32,6 +34,8 @@ class picLabel(QLabel):
         self.setStyleSheet("border: 3px solid rgba(0, 0, 255, 0%)") 
 
     def mousePressEvent(self, e):
+        """ The behaviour of choosing a label
+        """
         if self.index == 0: return
         global flag
         if flag == 0:
@@ -46,6 +50,8 @@ class picLabel(QLabel):
             flag = self.index
 
 class preStyle(QGroupBox):
+    """ Defines a predefined style, save the previous selected one
+    """
 
     def __init__(self, parent, index, picName = "default.png", width = 200, height = 200):
         super(QGroupBox, self).__init__()
@@ -70,9 +76,11 @@ class myPreDefined(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.inputPic = myImageViewer("pics/default.jpg", 400, 300)
-        self.outputPic = myImageResult("pics/default_null.jpg", 400, 300)
-        self.defaultInpath = self.inputPic.getImagePath()
+        self.inputPic = myImageViewer("pics/default.jpg", 320, 240)
+        self.humanPic = myImageViewer("pics/default.jpg", 320, 240)
+        self.outputPic = myImageResult("pics/default_null.jpg", 320, 240)
+        self.defaultInputpath = self.inputPic.getImagePath()
+        self.defaultHumanpath = self.humanPic.getImagePath()
 
         self.VBoxGroups = []
         for i in range(self.nStyle):
@@ -108,7 +116,7 @@ class myPreDefined(QWidget):
         self.HBoxGroupButton.setLayout(self.HBoxButton)
         
         self.progBar = QProgressBar()
-        self.progBar.setFixedSize(500, 10)
+        self.progBar.setFixedSize(800, 10)
         self.progBar.setMinimum(0)
         self.progBar.setMaximum(100)
         self.HBoxGroupBar = QGroupBox()
@@ -132,20 +140,20 @@ class myPreDefined(QWidget):
         self.HBox2.addStretch(1)
         self.HBox2.addWidget(self.inputPic)
         self.HBox2.addStretch(1)
+        self.HBox2.addWidget(self.humanPic)
+        self.HBox2.addStretch(1)
         self.HBox2.addWidget(self.outputPic)
         self.HBox2.addStretch(1)
         self.HBoxGroupDown.setLayout(self.HBox2)
 
         self.VBox = QVBoxLayout()
-        self.VBox.addStretch(1)
+        self.VBox.addStretch(0.2)
         self.VBox.addWidget(self.scroll)
-        self.VBox.addStretch(1)
         self.VBox.addWidget(self.HBoxGroupBar)
-        self.VBox.addStretch(1)
         self.VBox.addWidget(self.HBoxGroupDown)
-        self.VBox.addStretch(1)
+        self.VBox.addStretch(0.2)
         self.VBox.addWidget(self.HBoxGroupButton)
-        self.VBox.addStretch(1)
+        self.VBox.addStretch(0.2)
         self.setLayout(self.VBox)
 
     def transfer(self):
@@ -153,11 +161,15 @@ class myPreDefined(QWidget):
         if flag == 0:
             reply = QMessageBox.warning(self, "错误", "请选择一种风格！", QMessageBox.Ok, QMessageBox.Ok)
             return
-        if self.inputPic.getImagePath() == self.defaultInpath:
+        if self.inputPic.getImagePath() == self.defaultInputpath:
             reply = QMessageBox.warning(self, "错误", "请选择内容图片！", QMessageBox.Ok, QMessageBox.Ok)
             return
+        if self.humanPic.getImagePath() == self.defaultHumanpath:
+            reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
+            return
         if not self.timer.isActive():
-            self.inpath = self.inputPic.getImagePath()
+            self.inputpath = self.inputPic.getImagePath()
+            self.humanpath = self.humanPic.getImagePath()
             self.outname = self.inputPic.getImageName() + "_transfered_style%d"%flag 
             while os.path.exists("result/" + self.outname + ".jpg"):
                 self.outname = self.outname + "_1"
@@ -176,7 +188,12 @@ class myPreDefined(QWidget):
             self.style = self.stylePath[flag - 1]
             self.shareButton.setDisabled(True)
             self.timer.start(100, self)
-            self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inpath + " " + self.outpath + " " + self.style + " " + str(self.height) + " " + str(self.width), shell = True)
+
+            # Please change the eval_pretrained.py
+            xpos = 0.5
+            ypos = 0.5
+            self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inpath + " " + self.outpath + " " + self.style \
+                + " " + str(self.height) + " " + str(self.width) + " " + str(xpos) + " " + str(ypos), shell = True)
 
     def timerEvent(self, a):
         if self.step >= 100:

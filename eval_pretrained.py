@@ -172,29 +172,27 @@ def transform_net(input_image, tarining=True):
     return y
 
 
-def eval_pretrained(inputpath, humanpath, outpath, style, height = 540, width = 900, 
-                    xpos = 0.5, ypos = 0.5, resizeRatio = 1, alpha = 1, iters = 1):
+def eval_pretrained(imagePath, outpath, style, height = 540, width = 900, iters = 1):
 
-    inputImage = get_image(inputpath, height=height, width=width)
+    image = get_image(imagePath, height=height, width=width)
     # remove_bg(humanpath)
-    humanImage = get_image('temp/no-bg.png', ratio=resizeRatio, alpha=alpha)
-    inputImage.paste(humanImage, (0,0), humanImage)
+    # humanImage = get_image('temp/no-bg.png', ratio=resizeRatio, alpha=alpha)
+    # inputImage.paste(humanImage, (0,0), humanImage)
 
-    outputImage = np.asarray(inputImage, np.float32)
-    outputImage = np.expand_dims(outputImage, 0)
-    for t in range(iters):
-        outputImage = transform_net(outputImage)
+    out = np.asarray(image, np.float32)
+    out = np.expand_dims(out, 0)
+    out = transform_net(out)
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         ckpt = tf.train.get_checkpoint_state(style + '/')
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
-        res = sess.run(outputImage)
+        for i in range(iters):
+            res = sess.run(out)
         save_image(outpath, res)
 
 if __name__ == '__main__':
-    eval_pretrained(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]), 
-        float(sys.argv[7]), float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10]), int(sys.argv[11]))
+    eval_pretrained(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), int(sys.argv[4]), int(sys.argv[6]))
     print("Finished.")
 #eval(image_path, output_path, style)

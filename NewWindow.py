@@ -361,8 +361,9 @@ class confWidget(QWidget):
 
         # open the original input image and human image
         inputImg = Image.open(inputPath)
-        humanImg = Image.open(humanPath).convert('RGBA')
+        inputImg.save(self.tempPath)
         self.inputImg = inputImg.copy()
+        humanImg = Image.open(humanPath).convert('RGBA')
         self.humanImg = humanImg.copy()
         # if the human image is too large, resize it and save it in self.origHumanImg
         # the "orig" here means the original human image shown in confWidget, resized by self.initRatio
@@ -425,6 +426,9 @@ class confWidget(QWidget):
         self.resetButton = QPushButton('重新设置')
         self.resetButton.setFixedSize(90, 30)
         self.resetButton.clicked.connect(self.reset)
+        self.finishButton = QPushButton('完成')
+        self.finishButton.setFixedSize(90, 30)
+        self.finishButton.clicked.connect(self.finish)
 
         self.vboxgroup = QGroupBox()
         self.vbox = QVBoxLayout()
@@ -442,6 +446,7 @@ class confWidget(QWidget):
         self.vbox.addWidget(self.humanButton)
         self.vbox.addWidget(self.bgButton)
         self.vbox.addWidget(self.resetButton)
+        self.vbox.addWidget(self.finishButton)
         self.vbox.addStretch(1)
         self.vboxgroup.setLayout(self.vbox)
 
@@ -503,19 +508,29 @@ class confWidget(QWidget):
         tempImg.save(self.tempPath)
         self.change(self.tempPath)
 
-    def change(self, image):
-        self.label.changeImage(image)
-
     def reset(self):
+        """ reset all the setting terms
+            reset the human image
+            refresh the image saved in self.tempPath
+        """
+        self.humanFlag = False
+        self.bgFlag = True
         self.xSlider.setValue(50)
         self.ySlider.setValue(50)
         self.resizeSlider.setValue(10)
         self.alphaSlider.setValue(255)
         self.itersSlider.setValue(1)
         self.humanImg = self.origHumanImg.copy()
-        # self.label.resetCopy()
-        self.change(self.label.getOrigPath())
+        origPath = self.label.getOrigPath()
+        self.change(origPath)
+        shutil.copy(origPath, tempPath)
+
+    def finish(self):
+        self.close()
+
+    def change(self, image):
+        self.label.changeImage(image)
 
     def getConfiguration(self):
-        return self.itersSlider.value()
+        return self.itersSlider.value(), self.tempPath
 

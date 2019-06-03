@@ -380,7 +380,7 @@ class confWidget(QWidget):
         self.xSlider = QSlider(Qt.Horizontal)
         self.xSlider.setRange(0, 100)
         self.xSlider.setValue(50)
-        self.xSlider.valueChanged.connect(self.selectPos)
+        self.xSlider.valueChanged.connect(self.draw)
         self.yLabel = QLabel()
         self.yLabel.resize(80, 20)
         self.yLabel.setText("纵向位置")
@@ -388,7 +388,7 @@ class confWidget(QWidget):
         self.ySlider = QSlider(Qt.Horizontal)
         self.ySlider.setRange(0, 100)
         self.ySlider.setValue(50)
-        self.ySlider.valueChanged.connect(self.selectPos)
+        self.ySlider.valueChanged.connect(self.draw)
         self.resizeLabel = QLabel()
         self.resizeLabel.resize(80, 20)
         self.resizeLabel.setText("缩放")
@@ -396,7 +396,7 @@ class confWidget(QWidget):
         self.resizeSlider = QSlider(Qt.Horizontal)
         self.resizeSlider.setRange(1, 20)
         self.resizeSlider.setValue(10)
-        self.resizeSlider.valueChanged.connect(self.resize)
+        self.resizeSlider.valueChanged.connect(self.draw)
         self.alhpaLabel = QLabel()
         self.alhpaLabel.resize(80, 20)
         self.alhpaLabel.setText("透明度")
@@ -405,7 +405,7 @@ class confWidget(QWidget):
         self.alphaSlider.setRange(0, 255)
         self.alphaSlider.setSingleStep(1)
         self.alphaSlider.setValue(255)
-        self.alphaSlider.valueChanged.connect(self.alpha)
+        self.alphaSlider.valueChanged.connect(self.draw)
         self.itersLabel = QLabel()
         self.itersLabel.resize(80, 20)
         self.itersLabel.setText("计算次数")
@@ -456,32 +456,13 @@ class confWidget(QWidget):
     def click(self, x, y):
         """ when clicking the image, catch its loacation,
             and save in self.xSlider and self.ySlider;
-            if human is visible, call self.draw()
+            if human is visible, draw it 
         """
         # All images will be resized before showing, and here we extract the "percentage of the inputImg"
         print(x, y)
         self.xSlider.setValue(100.0 * x / self.label.width)
         self.ySlider.setValue(100.0 * y / self.label.height)
-        if self.humanFlag:
-            self.draw()
-
-    def selectPos(self):
-        if self.humanFlag:
-            self.draw()
-
-    def resize(self):
-        width = int(self.origHumanImg.width * self.resizeSlider.value() / 10.0)
-        height = int(self.origHumanImg.height * self.resizeSlider.value() / 10.0)
-        self.humanImg = ImageOps.fit(self.origHumanImg.copy(), (width, height), Image.ANTIALIAS)
-        if self.humanFlag:
-            self.draw()
-
-    def alpha(self):
-        _, _, _, a = self.humanImg.split()
-        a = a.point(lambda x: self.alphaSlider.value() if x > 0 else 0)
-        self.humanImg.putalpha(a)
-        if self.humanFlag:
-            self.draw()
+        self.draw()
 
     def toggleHuman(self):
         """ switch between visible / invisible human
@@ -500,10 +481,22 @@ class confWidget(QWidget):
         """ combine the self.inputImg and self.humanImg based on their relative position,
             which is defined in self.xSlider and self.ySlider, and then show the result
         """
+        if not self.humanFlag:
+            return
+        # resize
+        width = int(self.origHumanImg.width * self.resizeSlider.value() / 10.0)
+        height = int(self.origHumanImg.height * self.resizeSlider.value() / 10.0)
+        self.humanImg = ImageOps.fit(self.origHumanImg.copy(), (width, height), Image.ANTIALIAS)
+        # adjust transparency
+        _, _, _, a = self.humanImg.split()
+        a = a.point(lambda x: self.alphaSlider.value() if x > 0 else 0)
+        self.humanImg.putalpha(a)
+        # calculate relative position
         x = self.xSlider.value() / 100.0 * self.inputImg.width
         y = self.ySlider.value() / 100.0 * self.inputImg.height
         width = self.humanImg.width
         height = self.humanImg.height
+        # combine two images
         tempImg = self.inputImg.copy()
         tempImg.paste(self.humanImg, (int(x-width/2), 
             int(y-height/2)), self.humanImg)

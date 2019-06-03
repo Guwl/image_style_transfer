@@ -3,9 +3,6 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.Qt import Qt
 from NewWindow import *
 
-tempInputPath = 'temp/input_temp.png'
-tempHumanPath = 'temp/human_temp.png'
-tempBgRemPath = 'temp/no-bg.png'
 
 def getName(path):
     name = ''
@@ -29,9 +26,8 @@ def setImage(label, newImage):
 
 class myImageViewer(QLabel):
 
-    def __init__(self, image, width, height, parent=None):
+    def __init__(self, image, width, height, tempPath):
         super(QLabel, self).__init__()
-        self.parent = parent
         self.imagePath = image
         self.name = getName(self.imagePath)
         self.image = QImage(image)
@@ -41,57 +37,23 @@ class myImageViewer(QLabel):
         self.height = height
         self.setFixedSize(self.width, self.height)
         self.image = self.image.scaled(self.width, self.height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.setPixmap(QPixmap.fromImage(self.image)) 
+        self.setPixmap(QPixmap.fromImage(self.image))
         self.setAlignment(Qt.AlignCenter)
+        self.tempPath = tempPath
+        self.changeFlag = True
     
     def mousePressEvent(self, e):
         newImage = QFileDialog.getOpenFileName(self, 'open file', './', 'Images (*.png *.jpg)')[0]
         if len(newImage):
             setImage(self, newImage)
-            if self.parent is not None:
-                # setImage(self.parent.choosePos, newImage)
-                shutil.copy(newImage, tempInputPath)
-            else:
-                shutil.copy(newImage, tempHumanPath)
-                if not hasattr(self, 'posWidget'):
-                    self.posWidget = posWidget(self.imagePath, self.parent.humanpath)
-                self.posWidget.show()
+            shutil.copy(newImage, self.tempPath)
+            self.changeFlag = True
 
-
-    def getImagePath(self):
-        return self.imagePath
-
-    def getImageName(self):
-        return self.name
-    
-    def getImageWidth(self):
-        return self.origWidth
-    
-    def getImageHeight(self):
-        return self.origHeight
-
-
-class myImagePicker(QLabel):
-
-    def __init__(self, image, width, height, parent=None):
-        super(QLabel, self).__init__()
-        self.parent = parent
-        self.imagePath = image
-        self.name = getName(self.imagePath)
-        self.image = QImage(image)
-        self.origWidth = self.image.width()
-        self.origHeight = self.image.height()
-        self.width = width
-        self.height = height
-        self.setFixedSize(self.width, self.height)
-        self.image = self.image.scaled(self.width, self.height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.setPixmap(QPixmap.fromImage(self.image)) 
-        self.setAlignment(Qt.AlignCenter)
-    
-    def mousePressEvent(self, e):
-        if not hasattr(self, 'posWidget'):
-            self.posWidget = posWidget(self.imagePath, self.parent.humanpath)
-        self.posWidget.show()
+    def checkChange(self):
+        if self.changeFlag:
+            self.changeFlag = False
+            return True
+        return False
 
     def getImagePath(self):
         return self.imagePath
@@ -108,9 +70,8 @@ class myImagePicker(QLabel):
 
 class myImageResult(QLabel):
 
-    def __init__(self, image, width, height, parent=None):
+    def __init__(self, image, width, height):
         super(QLabel, self).__init__()
-        self.parent = parent
         self.imagePath = image
         self.name = getName(self.imagePath)
         self.origImage = QImage(image)

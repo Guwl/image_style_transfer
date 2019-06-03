@@ -12,6 +12,7 @@ from requests_toolbelt import MultipartEncoder
 
 global flag 
 flag = 0    # The index (start from 1) of the selected label, 0 - nothing selected
+
 class picLabel(QLabel):
     """ Define a label in the preStyle group
     """
@@ -76,10 +77,12 @@ class myPreDefined(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.inputPic = myImageViewer("pics/default.jpg", 320, 240, self)
-        self.humanPic = myImageViewer("pics/default.jpg", 320, 240, None)
+        self.tempInputPath = 'temp/input_temp.png'
+        self.tempHumanPath = 'temp/human_temp.png'
+        self.inputPic = myImageViewer("pics/default.jpg", 320, 240, self.tempInputPath)
+        self.humanPic = myImageViewer("pics/default.jpg", 320, 240, self.tempHumanPath)
         # self.choosePos = myImagePicker("pics/null.png", 320, 240, self)
-        self.outputPic = myImageResult("pics/default_null.jpg", 320, 240, None)
+        self.outputPic = myImageResult("pics/default_null.jpg", 320, 240)
         self.defaultInputPath = self.inputPic.getImagePath()
         self.defaultHumanPath = self.humanPic.getImagePath()
 
@@ -111,7 +114,7 @@ class myPreDefined(QWidget):
         # self.shareButton.setFont(QFont("Roman times", 20, QFont.Bold))
         # self.shareButton.setFixedSize(160, 40)
         # self.shareButton.clicked.connect(self.share)
-        self.shareButton.setDisabled(True)
+        # self.shareButton.setDisabled(True)
         self.timer = QBasicTimer()
         self.step = 0
         self.HBoxGroupButton = QGroupBox()
@@ -162,13 +165,17 @@ class myPreDefined(QWidget):
         self.setLayout(self.VBox)
 
     def configure(self):
-        if self.inputPic.getImagePath() == self.defaultInputPath:
+        self.inputPath = self.inputPic.getImagePath()
+        self.humanPath = self.humanPic.getImagePath()
+        if self.inputPath == self.defaultInputPath:
             reply = QMessageBox.warning(self, "错误", "请选择内容图片！", QMessageBox.Ok, QMessageBox.Ok)
             return
-        if self.humanPic.getImagePath() == self.defaultHumanPath:
+        if self.humanPath == self.defaultHumanPath:
             reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
             return
-        
+        if not hasattr(self, 'confWidget') or self.inputPic.checkChange() or self.humanPic.checkChange():
+            self.confWidget = confWidget(self.inputPath, self.humanPath)
+        self.confWidget.show()
 
     def transfer(self):
         global flag
@@ -180,6 +187,9 @@ class myPreDefined(QWidget):
             return
         if self.humanPic.getImagePath() == self.defaultHumanPath:
             reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
+            return
+        if not hasattr(self, 'confWidget') or self.inputPic.checkChange() or self.humanPic.checkChange():
+            reply = QMessageBox.warning(self, "错误", "请先进行配置! ", QMessageBox.Ok, QMessageBox.Ok)
             return
         if not self.timer.isActive():
             self.inputPath = self.inputPic.getImagePath()
@@ -200,10 +210,9 @@ class myPreDefined(QWidget):
                 self.width = self.maxwidth
                 self.height = int(self.width / self.ratio)
             self.style = self.stylePath[flag - 1]
-            self.shareButton.setDisabled(True)
+            # self.shareButton.setDisabled(True)
             self.timer.start(100, self)
 
-            # Please change the eval_pretrained.py
             xpos = 0.5
             ypos = 0.5
             resizeRatio = 1
@@ -215,7 +224,7 @@ class myPreDefined(QWidget):
     def timerEvent(self, a):
         if self.step >= 100:
             self.timer.stop()
-            self.shareButton.setDisabled(False)
+            # self.shareButton.setDisabled(False)
             self.step = 0
             return
         self.step += 0.01 

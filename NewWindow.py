@@ -350,7 +350,7 @@ class editWidget(QWidget):
             if ok3:
                 post_a_pic(self.label.getImagePath(), aToken, text)
 
-class posWidget(QWidget):
+class confWidget(QWidget):
 
     def __init__(self, image, human):
         super(QWidget, self).__init__()
@@ -410,7 +410,8 @@ class posWidget(QWidget):
         self.xSlider.setValue(100.0 * x / self.label.width)
         self.ySlider.setValue(100.0 * y / self.label.height)
 
-    def switcBgRemove
+    def switcBgRemove(self):
+        pass
 
     def change(self, image):
         self.label.changeImage(image)

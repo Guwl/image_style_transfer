@@ -424,7 +424,7 @@ class confWidget(QWidget):
         self.bgButton = QPushButton('显示/隐藏背景')
         self.bgButton.setFixedSize(90, 30)
         self.bgButton.clicked.connect(self.toggleBg)
-        self.bgFlag = True
+        self.bgFlag = False
         self.resetButton = QPushButton('重新设置')
         self.resetButton.setFixedSize(90, 30)
         self.resetButton.clicked.connect(self.reset)
@@ -485,15 +485,16 @@ class confWidget(QWidget):
         """ when first trun on background removal, call ImageProcessing.remove_bg()
         """
         self.bgFlag = not self.bgFlag
-        if not hasattr(self, bgRemImg):
+        if not hasattr(self, 'bgRemImg'):
             self.origHumanImg.save(self.tempHumanPath)
             if remove_bg(self.tempHumanPath, self.tempBgRemPath):
                 bgRemImg = Image.open(self.tempBgRemPath)
                 self.bgRemImg = bgRemImg.copy()
-                if self.initRatio < 1:
-                    self.origBgRemImg = ImageOps.fit(bgRemImg, (inputImg.width, inputImg.height), Image.ANTIALIAS)
-                else:
-                    self.origBgRemImg = bgRemImg
+                self.origBgRemImg = ImageOps.fit(bgRemImg, (self.origHumanImg.width, self.origHumanImg.height), Image.ANTIALIAS)
+            else:
+                self.origBgRemImg = None
+                self.bgRemImg = None
+        self.draw()
 
 
     def draw(self):
@@ -502,23 +503,37 @@ class confWidget(QWidget):
         """
         if not self.humanFlag:
             return
-        # resize
+
+        # resize and adjust the tranparency
+        # when no-bg.png is avaliable, and self.bgFlag is True, use it
         width = int(self.origHumanImg.width * self.resizeSlider.value() / 10.0)
         height = int(self.origHumanImg.height * self.resizeSlider.value() / 10.0)
-        self.humanImg = ImageOps.fit(self.origHumanImg.copy(), (width, height), Image.ANTIALIAS)
-        # adjust transparency
-        _, _, _, a = self.humanImg.split()
-        a = a.point(lambda x: self.alphaSlider.value() if x > 0 else 0)
-        self.humanImg.putalpha(a)
+        if self.bgFlag and self.bgRemImg is not None:
+            # resize
+            self.bgRemImg = ImageOps.fit(self.origBgRemImg.copy(), (width, height), Image.ANTIALIAS)
+            # adjust transparency
+            _, _, _, a = self.bgRemImg.split()
+            a = a.point(lambda x: self.alphaSlider.value() if x > 0 else 0)
+            self.bgRemImg.putalpha(a)
+            imgUsed = self.bgRemImg
+        else:
+            # resize
+            self.humanImg = ImageOps.fit(self.origHumanImg.copy(), (width, height), Image.ANTIALIAS)
+            # adjust transparency
+            _, _, _, a = self.humanImg.split()
+            a = a.point(lambda x: self.alphaSlider.value() if x > 0 else 0)
+            self.humanImg.putalpha(a)
+            imgUsed = self.humanImg
+
         # calculate relative position
         x = self.xSlider.value() / 100.0 * self.inputImg.width
         y = self.ySlider.value() / 100.0 * self.inputImg.height
-        width = self.humanImg.width
-        height = self.humanImg.height
+        width = self.imgUsed.width
+        height = self.imgUsed.height
         # combine two images
         tempImg = self.inputImg.copy()
-        tempImg.paste(self.humanImg, (int(x-width/2), 
-            int(y-height/2)), self.humanImg)
+        tempImg.paste(imgUsed, (int(x-width/2), 
+            int(y-height/2)), imgUsed)
         tempImg.save(self.tempPath)
         self.change(self.tempPath)
 

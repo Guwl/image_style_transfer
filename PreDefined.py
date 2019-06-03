@@ -188,8 +188,12 @@ class myPreDefined(QWidget):
         if self.humanPic.getImagePath() == self.defaultHumanPath:
             reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
             return
+        self.inputPath = self.inputPic.getImagePath()
+        self.humanPath = self.humanPic.getImagePath()
         if not hasattr(self, 'confWidget') or self.inputPic.checkChange() or self.humanPic.checkChange():
             reply = QMessageBox.warning(self, "错误", "请先进行配置! ", QMessageBox.Ok, QMessageBox.Ok)
+            self.confWidget = confWidget(self.inputPath, self.humanPath)
+            self.confWidget.show()
             return
         if not self.timer.isActive():
             self.inputPath = self.inputPic.getImagePath()

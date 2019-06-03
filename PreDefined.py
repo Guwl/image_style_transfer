@@ -78,10 +78,10 @@ class myPreDefined(QWidget):
     def initUI(self):
         self.inputPic = myImageViewer("pics/default.jpg", 320, 240, self)
         self.humanPic = myImageViewer("pics/default.jpg", 320, 240, None)
-        self.choosePos = myImagePicker("pics/null.png", 320, 240, self)
+        # self.choosePos = myImagePicker("pics/null.png", 320, 240, self)
         self.outputPic = myImageResult("pics/default_null.jpg", 320, 240, None)
-        self.defaultInputpath = self.inputPic.getImagePath()
-        self.defaultHumanpath = self.humanPic.getImagePath()
+        self.defaultInputPath = self.inputPic.getImagePath()
+        self.defaultHumanPath = self.humanPic.getImagePath()
 
         self.VBoxGroups = []
         for i in range(self.nStyle):
@@ -99,23 +99,27 @@ class myPreDefined(QWidget):
         self.styleScroll.setAutoFillBackground(True)
         self.styleScroll.setWidgetResizable(True)
 
+        self.configButton = QPushButton('配置')
+        self.configButton.setFont(QFont("Roman times", 20, QFont.Bold))
+        self.configButton.setFixedSize(160, 40)
+        self.configButton.clicked.connect(self.configure)
         self.transButton = QPushButton('转换')
         self.transButton.setFont(QFont("Roman times", 20, QFont.Bold))
         self.transButton.setFixedSize(160, 40)
         self.transButton.clicked.connect(self.transfer)
-        self.shareButton = QPushButton('分享')
-        self.shareButton.setFont(QFont("Roman times", 20, QFont.Bold))
-        self.shareButton.setFixedSize(160, 40)
-        self.shareButton.clicked.connect(self.share)
+        # self.shareButton = QPushButton('分享')
+        # self.shareButton.setFont(QFont("Roman times", 20, QFont.Bold))
+        # self.shareButton.setFixedSize(160, 40)
+        # self.shareButton.clicked.connect(self.share)
         self.shareButton.setDisabled(True)
         self.timer = QBasicTimer()
         self.step = 0
         self.HBoxGroupButton = QGroupBox()
         self.HBoxButton = QHBoxLayout()
         self.HBoxButton.addStretch(1)
-        self.HBoxButton.addWidget(self.transButton)
+        self.HBoxButton.addWidget(self.configButton)
         self.HBoxButton.addStretch(1)
-        self.HBoxButton.addWidget(self.shareButton)
+        self.HBoxButton.addWidget(self.transButton)
         self.HBoxButton.addStretch(1)
         self.HBoxGroupButton.setLayout(self.HBoxButton)
 
@@ -137,8 +141,8 @@ class myPreDefined(QWidget):
         self.HBox2.addStretch(2)
         self.HBox2.addWidget(self.humanPic)
         self.HBox2.addStretch(2)
-        self.HBox2.addWidget(self.choosePos)
-        self.HBox2.addStretch(2)
+        # self.HBox2.addWidget(self.choosePos)
+        # self.HBox2.addStretch(2)
         self.HBox2.addWidget(self.outputPic)
         self.HBox2.addStretch(2)
         self.HBoxGroupDown.setLayout(self.HBox2)
@@ -157,26 +161,33 @@ class myPreDefined(QWidget):
         self.VBox.addStretch(0.2)
         self.setLayout(self.VBox)
 
+    def configure(self):
+        if self.inputPic.getImagePath() == self.defaultInputPath:
+            reply = QMessageBox.warning(self, "错误", "请选择内容图片！", QMessageBox.Ok, QMessageBox.Ok)
+            return
+        if self.humanPic.getImagePath() == self.defaultHumanPath:
+            reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
+            return
+        
+
     def transfer(self):
         global flag
         if flag == 0:
             reply = QMessageBox.warning(self, "错误", "请选择一种风格！", QMessageBox.Ok, QMessageBox.Ok)
             return
-        if self.inputPic.getImagePath() == self.defaultInputpath:
+        if self.inputPic.getImagePath() == self.defaultInputPath:
             reply = QMessageBox.warning(self, "错误", "请选择内容图片！", QMessageBox.Ok, QMessageBox.Ok)
             return
-        if self.humanPic.getImagePath() == self.defaultHumanpath:
+        if self.humanPic.getImagePath() == self.defaultHumanPath:
             reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
             return
         if not self.timer.isActive():
-            self.inputpath = self.inputPic.getImagePath()
-            self.humanpath = self.humanPic.getImagePath()
-            self.outname = self.inputPic.getImageName() + "_transfered_style%d"%flag
-            self.tempname = self.inputPic.getImageName()
-            while os.path.exists("result/" + self.outname + ".jpg"):
-                self.outname = self.outname + "_1"
-            self.outpath = "result/" + self.outname + ".jpg"
-            self.tempath = "result/" + self.tempname + ".jpg"
+            self.inputPath = self.inputPic.getImagePath()
+            self.humanPath = self.humanPic.getImagePath()
+            self.outName = self.inputPic.getImageName() + "_transfered_style%d"%flag
+            while os.path.exists("result/" + self.outName + ".jpg"):
+                self.outName = self.outName + "_1"
+            self.outPath = "result/" + self.outName + ".jpg"
             self.width = self.inputPic.getImageWidth()
             self.height = self.inputPic.getImageHeight()
             self.ratio = float(self.width) / float(self.height)
@@ -195,8 +206,11 @@ class myPreDefined(QWidget):
             # Please change the eval_pretrained.py
             xpos = 0.5
             ypos = 0.5
-            self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inputpath + " " + self.humanpath + " " + self.outpath + " " + self.style \
-                + " " + str(self.height) + " " + str(self.width) + " " + str(xpos) + " " + str(ypos), shell = True)
+            resizeRatio = 1
+            alpha = 1
+            iters = 1
+            self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inputPath + " " + self.humanPath + " " + self.outPath + " " + self.style \
+                + " " + str(self.height) + " " + str(self.width) + " " + str(xpos) + " " + str(ypos) + " " + str(resizeRatio) + " " + str(alpha) + " " + str(iters), shell = True)
 
     def timerEvent(self, a):
         if self.step >= 100:
@@ -210,7 +224,7 @@ class myPreDefined(QWidget):
             self.progBar.setMinimum(0)
             self.progBar.setMaximum(100)
             self.progBar.setValue(0)
-            self.outputPic.changeImage(self.outpath)
+            self.outputPic.changeImage(self.outPath)
             self.parent.newHistory()
             return
         self.progBar.setMaximum(0)
@@ -231,10 +245,10 @@ class myPreDefined(QWidget):
                     tokenFile.close()
                     text, ok3 = QInputDialog.getText(self, '分享到微博', '请输入您想说的话：')
                     if ok3:
-                         post_a_pic(self.outpath, token, text)
+                         post_a_pic(self.outPath, token, text)
                 else:
                     reply = QMessageBox.warning(self, "错误", "请输入正确的code！", QMessageBox.Ok, QMessageBox.Ok)
         else:
             text, ok3 = QInputDialog.getText(self, '分享到微博', '请输入您想说的话：')
             if ok3:
-                post_a_pic(self.outpath, aToken, text)
+                post_a_pic(self.outPath, aToken, text)

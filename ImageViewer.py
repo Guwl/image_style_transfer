@@ -3,6 +3,10 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.Qt import Qt
 from NewWindow import *
 
+tempInputPath = 'temp/input_temp.png'
+tempHumanPath = 'temp/human_temp.png'
+tempBgRemPath = 'temp/no-bg.png'
+
 def getName(path):
     name = ''
     path = path.split('/')[-1]
@@ -10,6 +14,7 @@ def getName(path):
     for i in path:
         name += i
     return name
+
 
 def setImage(label, newImage):
     label.imagePath = newImage
@@ -44,7 +49,14 @@ class myImageViewer(QLabel):
         if len(newImage):
             setImage(self, newImage)
             if self.parent is not None:
-                setImage(self.parent.choosePos, newImage)
+                # setImage(self.parent.choosePos, newImage)
+                shutil.copy(newImage, tempInputPath)
+            else:
+                shutil.copy(newImage, tempHumanPath)
+                if not hasattr(self, 'posWidget'):
+                    self.posWidget = posWidget(self.imagePath, self.parent.humanpath)
+                self.posWidget.show()
+
 
     def getImagePath(self):
         return self.imagePath
@@ -57,6 +69,7 @@ class myImageViewer(QLabel):
     
     def getImageHeight(self):
         return self.origHeight
+
 
 class myImagePicker(QLabel):
 
@@ -77,7 +90,7 @@ class myImagePicker(QLabel):
     
     def mousePressEvent(self, e):
         if not hasattr(self, 'posWidget'):
-            self.posWidget = posWidget(self.imagePath)
+            self.posWidget = posWidget(self.imagePath, self.parent.humanpath)
         self.posWidget.show()
 
     def getImagePath(self):
@@ -91,6 +104,7 @@ class myImagePicker(QLabel):
     
     def getImageHeight(self):
         return self.origHeight
+
 
 class myImageResult(QLabel):
 
@@ -124,6 +138,7 @@ class myImageResult(QLabel):
         self.image = self.origImage.scaled(self.width, self.height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPixmap(QPixmap.fromImage(self.image))
         self.setAlignment(Qt.AlignCenter)
+
 
 class myImageBlank(QLabel):
 

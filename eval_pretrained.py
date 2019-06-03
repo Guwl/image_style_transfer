@@ -8,7 +8,6 @@ import requests
 from PIL import Image, ImageOps, ImageFile
 from matplotlib import pyplot as plt
 import sys
-import pdb
 
 
 def get_image(img_path, height=None, width=None, ratio=None, alpha=None):
@@ -174,33 +173,25 @@ def transform_net(input_image, tarining=True):
     return y
 
 
-
-
-# image_path = 'content_test/001.jpg'
-# output_path = 'result/' + image_path[13:]
-# style = 'pretrained_model/style23'
-
-
 def eval_pretrained(inputpath, humanpath, outpath, style, height = 540, width = 900, 
-                    xpos = 0.5, ypos = 0.5, resizeRatio = 1, alpha = 1, iter = 1):
+                    xpos = 0.5, ypos = 0.5, resizeRatio = 1, alpha = 1, iters = 1):
 
-    pdb.set_trace()
-    input_image = get_image(inputpath, height=height, width=width)
+    inputImage = get_image(inputpath, height=height, width=width)
     # remove_bg(humanpath)
-    human_image = get_image('temp/no-bg.png', ratio=resizeRatio, alpha=alpha)
-    input_image.paste(human_image, (0,0), human_image)
+    humanImage = get_image('temp/no-bg.png', ratio=resizeRatio, alpha=alpha)
+    inputImage.paste(humanImage, (0,0), humanImage)
 
-    output_image = np.asarray(input_image, np.float32)
-    output_image = np.expand_dims(output_image, 0)
-    for t in range(iter):
-        output_image = transform_net(output_image)
+    outputImage = np.asarray(inputImage, np.float32)
+    outputImage = np.expand_dims(outputImage, 0)
+    for t in range(iters):
+        outputImage = transform_net(outputImage)
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         ckpt = tf.train.get_checkpoint_state(style + '/')
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
-        res = sess.run(output_image)
+        res = sess.run(outputImage)
         save_image(outpath, res)
 
 if __name__ == '__main__':

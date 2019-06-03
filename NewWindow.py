@@ -352,9 +352,9 @@ class editWidget(QWidget):
 
 class confWidget(QWidget):
 
-    def __init__(self, image, human):
+    def __init__(self, inputImage, humanImage):
         super(QWidget, self).__init__()
-        self.label = newLabel(image, self)
+        self.label = newLabel(inputImage, self)
         #self.resize(self.label.getWidth()+160, self.label.getHeight()+100)
         #self.setMinimumHeight(500)
         self.setFixedSize(1000, 700)
@@ -377,6 +377,42 @@ class confWidget(QWidget):
         self.ySlider.setValue(50)
         self.ySlider.valueChanged.connect(self.slide)
         self.ypos = self.ySlider.value()
+        self.resizeLabel = QLabel()
+        self.resizeLabel.resize(80, 20)
+        self.resizeLabel.setText("缩放")
+        self.resizeLabel.setAlignment(Qt.AlignLeft)
+        self.resizeSlider = QSlider(Qt.Horizontal)
+        self.resizeSlider.setRange(0.1, 2)
+        self.resizeSlider.setSingleStep(0.1)
+        self.resizeSlider.setValue(1)
+        self.resizeSlider.valueChanged.connect(self.slide)
+        self.alhpaLabel = QLabel()
+        self.alhpaLabel.resize(80, 20)
+        self.alhpaLabel.setText("透明度")
+        self.alhpaLabel.setAlignment(Qt.AlignLeft)
+        self.alphaSlider = QSlider(Qt.Horizontal)
+        self.alphaSlider.setRange(0, 255)
+        self.alphaSlider.setSingleStep(1)
+        self.alphaSlider.setValue(255)
+        self.alphaSlider.valueChanged.connect(self.slide)
+        self.itersLabel = QLabel()
+        self.itersLabel.resize(80, 20)
+        self.itersLabel.setText("计算次数")
+        self.itersLabel.setAlignment(Qt.AlignLeft)
+        self.itersSlider = QSlider(Qt.Horizontal)
+        self.itersSlider.setRange(1, 5)
+        self.itersSlider.setSingleStep(1)
+        self.itersSlider.setValue(1)
+        self.itersSlider.valueChanged.connect(self.slide)
+        self.humanButton = QPushButton('显示/隐藏人像')
+        self.humanButton.setFixedSize(90, 30)
+        self.humanButton.clicked.connect(self.toggleHuman)
+        self.bgButton = QPushButton('显示/隐藏背景')
+        self.bgButton.setFixedSize(90, 30)
+        self.bgButton.clicked.connect(self.toggleBg)
+        self.resetButton = QPushButton('重新设置')
+        self.resetButton.setFixedSize(90, 30)
+        self.resetButton.clicked.connect(self.reset)
 
         self.vboxgroup = QGroupBox()
         self.vbox = QVBoxLayout()
@@ -385,6 +421,15 @@ class confWidget(QWidget):
         self.vbox.addWidget(self.xSlider)
         self.vbox.addWidget(self.yLabel)
         self.vbox.addWidget(self.ySlider)
+        self.vbox.addWidget(self.resizeLabel)
+        self.vbox.addWidget(self.resizeSlider)
+        self.vbox.addWidget(self.alhpaLabel)
+        self.vbox.addWidget(self.alphaSlider)
+        self.vbox.addWidget(self.itersLabel)
+        self.vbox.addWidget(self.itersSlider)
+        self.vbox.addWidget(self.humanButton)
+        self.vbox.addWidget(self.bgButton)
+        self.vbox.addWidget(self.resetButton)
         self.vbox.addStretch(1)
         self.vboxgroup.setLayout(self.vbox)
 
@@ -397,6 +442,7 @@ class confWidget(QWidget):
         self.setLayout(self.hbox)
 
     def slide(self):
+        print(self.sender()==self.xSlider)
         self.xpos = self.xSlider.value()
         self.ypos = self.ySlider.value()
 
@@ -410,7 +456,10 @@ class confWidget(QWidget):
         self.xSlider.setValue(100.0 * x / self.label.width)
         self.ySlider.setValue(100.0 * y / self.label.height)
 
-    def switcBgRemove(self):
+    def toggleHuman(self):
+        pass
+
+    def toggleBg(self):
         pass
 
     def change(self, image):
@@ -422,4 +471,12 @@ class confWidget(QWidget):
     def resize(self):
         pass
 
+    def reset(self):
+        self.xSlider.setValue(50)
+        self.ySlider.setValue(50)
+        self.resizeSlider.setValue(1)
+        self.alphaSlider.setValue(255)
+        self.itersSlider.setValue(1)
+        self.label.resetCopy()
+        self.change(self.label.getOrigPath())
 

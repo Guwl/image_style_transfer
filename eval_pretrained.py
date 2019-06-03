@@ -20,7 +20,7 @@ def get_image(img_path, height=None, width=None, ratio=None, alpha=None):
         image = ImageOps.fit(image, (int(image.width * ratio), int(image.height * ratio)), Image.ANTIALIAS)
     if alpha is not None:
         r, g, b, a = image.split()
-        a = a.point(lambda x: x * alpha)
+        a = a.point(lambda x: int(x * alpha))
         image.putalpha(a)
     return image
 

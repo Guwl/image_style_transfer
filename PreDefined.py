@@ -76,9 +76,10 @@ class myPreDefined(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.inputPic = myImageViewer("pics/default.jpg", 320, 240)
-        self.humanPic = myImageViewer("pics/default.jpg", 320, 240)
-        self.outputPic = myImageResult("pics/default_null.jpg", 320, 240)
+        self.inputPic = myImageViewer("pics/default.jpg", 320, 240, self)
+        self.humanPic = myImageViewer("pics/default.jpg", 320, 240, None)
+        self.choosePos = myImagePicker("pics/null.png", 320, 240, self)
+        self.outputPic = myImageResult("pics/default_null.jpg", 320, 240, None)
         self.defaultInputpath = self.inputPic.getImagePath()
         self.defaultHumanpath = self.humanPic.getImagePath()
 
@@ -93,6 +94,10 @@ class myPreDefined(QWidget):
             self.HBox1.addWidget(group)
             self.HBox1.addStretch(1)
         self.HBoxGroupScroll.setLayout(self.HBox1)
+        self.styleScroll = QScrollArea()
+        self.styleScroll.setWidget(self.HBoxGroupScroll) 
+        self.styleScroll.setAutoFillBackground(True)
+        self.styleScroll.setWidgetResizable(True)
 
         self.transButton = QPushButton('转换')
         self.transButton.setFont(QFont("Roman times", 20, QFont.Bold))
@@ -105,7 +110,6 @@ class myPreDefined(QWidget):
         self.shareButton.setDisabled(True)
         self.timer = QBasicTimer()
         self.step = 0
-
         self.HBoxGroupButton = QGroupBox()
         self.HBoxButton = QHBoxLayout()
         self.HBoxButton.addStretch(1)
@@ -114,7 +118,7 @@ class myPreDefined(QWidget):
         self.HBoxButton.addWidget(self.shareButton)
         self.HBoxButton.addStretch(1)
         self.HBoxGroupButton.setLayout(self.HBoxButton)
-        
+
         self.progBar = QProgressBar()
         self.progBar.setFixedSize(800, 10)
         self.progBar.setMinimum(0)
@@ -126,31 +130,28 @@ class myPreDefined(QWidget):
         self.HBoxBar.addStretch(1)
         self.HBoxGroupBar.setLayout(self.HBoxBar)
 
-        self.scroll = QScrollArea()
-        self.scroll.setWidget(self.HBoxGroupScroll) 
-        self.scroll.setAutoFillBackground(True)
-        self.scroll.setWidgetResizable(True)
-        #self.HBoxGroupUp = QGroupBox()
-        #self.HBoxUp = QHBoxLayout()
-        #self.HBoxUp.addWidget(self.scroll)
-        #self.HBoxGroupUp.setLayout(self.HBoxUp)
-
         self.HBoxGroupDown = QGroupBox()
         self.HBox2 = QHBoxLayout()
         self.HBox2.addStretch(1)
         self.HBox2.addWidget(self.inputPic)
-        self.HBox2.addStretch(1)
+        self.HBox2.addStretch(2)
         self.HBox2.addWidget(self.humanPic)
-        self.HBox2.addStretch(1)
+        self.HBox2.addStretch(2)
+        self.HBox2.addWidget(self.choosePos)
+        self.HBox2.addStretch(2)
         self.HBox2.addWidget(self.outputPic)
-        self.HBox2.addStretch(1)
+        self.HBox2.addStretch(2)
         self.HBoxGroupDown.setLayout(self.HBox2)
+        self.picScroll = QScrollArea()
+        self.picScroll.setWidget(self.HBoxGroupDown) 
+        self.picScroll.setAutoFillBackground(True)
+        self.picScroll.setWidgetResizable(True)
 
         self.VBox = QVBoxLayout()
         self.VBox.addStretch(0.2)
-        self.VBox.addWidget(self.scroll)
+        self.VBox.addWidget(self.styleScroll)
         self.VBox.addWidget(self.HBoxGroupBar)
-        self.VBox.addWidget(self.HBoxGroupDown)
+        self.VBox.addWidget(self.picScroll)
         self.VBox.addStretch(0.2)
         self.VBox.addWidget(self.HBoxGroupButton)
         self.VBox.addStretch(0.2)
@@ -170,10 +171,12 @@ class myPreDefined(QWidget):
         if not self.timer.isActive():
             self.inputpath = self.inputPic.getImagePath()
             self.humanpath = self.humanPic.getImagePath()
-            self.outname = self.inputPic.getImageName() + "_transfered_style%d"%flag 
+            self.outname = self.inputPic.getImageName() + "_transfered_style%d"%flag
+            self.tempname = self.inputPic.getImageName()
             while os.path.exists("result/" + self.outname + ".jpg"):
                 self.outname = self.outname + "_1"
             self.outpath = "result/" + self.outname + ".jpg"
+            self.tempath = "result/" + self.tempname + ".jpg"
             self.width = self.inputPic.getImageWidth()
             self.height = self.inputPic.getImageHeight()
             self.ratio = float(self.width) / float(self.height)
@@ -192,7 +195,7 @@ class myPreDefined(QWidget):
             # Please change the eval_pretrained.py
             xpos = 0.5
             ypos = 0.5
-            self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inpath + " " + self.outpath + " " + self.style \
+            self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inputpath + " " + self.humanpath + " " + self.outpath + " " + self.style \
                 + " " + str(self.height) + " " + str(self.width) + " " + str(xpos) + " " + str(ypos), shell = True)
 
     def timerEvent(self, a):

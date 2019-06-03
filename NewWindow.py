@@ -11,8 +11,9 @@ from requests_toolbelt import MultipartEncoder
 
 class newLabel(QLabel):
 
-    def __init__(self, image):
+    def __init__(self, image, parent=None):
         super(QLabel, self).__init__()
+        self.parent = parent
         self.x0 = 0
         self.y0 = 0
         self.x1 = 0
@@ -25,12 +26,12 @@ class newLabel(QLabel):
         self.newImagePath = "temp/newImage.jpg"
         shutil.copy(self.imagePath, self.newImagePath)
         self.image = QImage(image)
+        self.origWidth = self.image.width()
+        self.origHeight = self.image.height()
+        self.image = self.image.scaled(800, 600, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.width = self.image.width()
         self.height = self.image.height()
-        self.origWidth = self.width
-        self.origHeight = self.height
         self.setFixedSize(self.width, self.height)
-        #self.image = self.image.scaled(800, 600, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.pixmap = QPixmap.fromImage(self.image)
         self.setPixmap(self.pixmap)
         self.setAlignment(Qt.AlignCenter)
@@ -73,7 +74,9 @@ class newLabel(QLabel):
     def setOk(self, ok):
         self.ok = ok
 
-    def mousePressEvent(self,event):
+    def mousePressEvent(self, event):
+        if self.parent is not None:
+            self.parent.click(event.x(), event.y())
         if self.switch:
             self.flag = True
             self.x0 = event.x()
@@ -104,14 +107,14 @@ class newLabel(QLabel):
             pixmap.save('temp/cut.jpg')
             self.ok = True
 
-class newWidget(QWidget):
+class editWidget(QWidget):
 
     def __init__(self, image):
         super(QWidget, self).__init__()
         self.label = newLabel(image)
         #self.resize(self.label.getWidth()+160, self.label.getHeight()+100)
         #self.setMinimumHeight(500)
-        self.setFixedSize(960, 830)
+        self.setFixedSize(1000, 700)
 
         self.updownButton = QPushButton('上下翻转')
         self.updownButton.setFixedSize(80, 30)
@@ -346,3 +349,63 @@ class newWidget(QWidget):
             text, ok3 = QInputDialog.getText(self, '分享到微博', '请输入您想说的话：')
             if ok3:
                 post_a_pic(self.label.getImagePath(), aToken, text)
+
+class posWidget(QWidget):
+
+    def __init__(self, image):
+        super(QWidget, self).__init__()
+        self.label = newLabel(image, self)
+        #self.resize(self.label.getWidth()+160, self.label.getHeight()+100)
+        #self.setMinimumHeight(500)
+        self.setFixedSize(1000, 700)
+
+        self.xLabel = QLabel()
+        self.xLabel.resize(80, 20)
+        self.xLabel.setText("横向位置")
+        self.xLabel.setAlignment(Qt.AlignLeft)
+        self.xSlider = QSlider(Qt.Horizontal)
+        self.xSlider.setRange(0, 100)
+        self.xSlider.setValue(50)
+        self.xSlider.valueChanged.connect(self.slide)
+        self.xpos = self.xSlider.value()
+        self.yLabel = QLabel()
+        self.yLabel.resize(80, 20)
+        self.yLabel.setText("纵向位置")
+        self.yLabel.setAlignment(Qt.AlignLeft)
+        self.ySlider = QSlider(Qt.Horizontal)
+        self.ySlider.setRange(0, 100)
+        self.ySlider.setValue(50)
+        self.ySlider.valueChanged.connect(self.slide)
+        self.ypos = self.ySlider.value()
+
+        self.vboxgroup = QGroupBox()
+        self.vbox = QVBoxLayout()
+        self.vbox.addStretch(1)
+        self.vbox.addWidget(self.xLabel)
+        self.vbox.addWidget(self.xSlider)
+        self.vbox.addWidget(self.yLabel)
+        self.vbox.addWidget(self.ySlider)
+        self.vbox.addStretch(1)
+        self.vboxgroup.setLayout(self.vbox)
+
+        self.hbox = QHBoxLayout()
+        self.hbox.addStretch(1)
+        self.hbox.addWidget(self.label)
+        self.hbox.addStretch(1)
+        self.hbox.addWidget(self.vboxgroup)
+        #self.hbox.addStretch(1)
+        self.setLayout(self.hbox)
+
+    def slide(self):
+        self.xpos = self.xSlider.value()
+        self.ypos = self.ySlider.value()
+
+    def click(self, x, y):
+        print(self.label.height)
+        print(self.label.width)
+        print(self.label.origHeight)
+        print(self.label.origWidth)
+        print(x)
+        print(y)
+        self.xSlider.setValue(100.0 * x / self.label.width)
+        self.ySlider.setValue(100.0 * y / self.label.height)

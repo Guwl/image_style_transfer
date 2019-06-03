@@ -3,25 +3,49 @@ import tensorflow as tf
 import numpy as np
 import scipy.io
 import scipy.misc
+import imageio
+import requests
 from PIL import Image, ImageOps, ImageFile
+from matplotlib import pyplot as plt
 import sys
+import pdb
 
 
-def get_resized_image(img_path, height, width):
+def get_image(img_path, height=None, width=None, ratio=None, alpha=None):
     image = Image.open(img_path)
     # it's because PIL is column major so you have to change place of width and height
-    # this is stupid, i know
     ImageFile.LOAD_TRUNCATED_IMAGES = True
-    image = ImageOps.fit(image, (width, height), Image.ANTIALIAS)
-    image = np.asarray(image, np.float32)
-    return np.expand_dims(image, 0)
+    if width is not None:
+        image = ImageOps.fit(image, (width, height), Image.ANTIALIAS)
+    elif ratio is not None:
+        image = ImageOps.fit(image, (int(image.width * ratio), int(image.height * ratio)), Image.ANTIALIAS)
+    if alpha is not None:
+        r, g, b, a = image.split()
+        a = a.point(lambda x: x * alpha)
+        image.putalpha(a)
+    return image
+
 
 def save_image(path, image):
     # Output should add back the mean pixels we subtracted at the beginning
     image = image[0]  # the image
     image = np.clip(image, 0, 255).astype(np.uint8)
-    scipy.misc.imsave(path, image)
+    imageio.imwrite(path, image)
 
+
+def remove_bg(humanPath):
+    humanImage = Image.open(humanPath)
+    response = requests.post(
+        'https://api.remove.bg/v1.0/removebg',
+        files={'image_file': open(humanPath, 'rb')},
+        data={'size': 'auto'},
+        headers={'X-Api-Key': '3z2aehkSXBENXTFmzPkb2y6X'},
+    )
+    if response.status_code == requests.codes.ok:
+        with open('temp/no-bg.png', 'wb') as out:
+            out.write(response.content)
+    else:
+        print("Error:", response.status_code, response.text)
 
 
 def conv2d(x, input_channel, output_channel, kernel_size, stride, mode='REFLECT'):
@@ -152,15 +176,24 @@ def transform_net(input_image, tarining=True):
 
 
 
-image_path = 'content_test/001.jpg'
-output_path = 'result/' + image_path[13:]
-style = 'pretrained_model/style23'
+# image_path = 'content_test/001.jpg'
+# output_path = 'result/' + image_path[13:]
+# style = 'pretrained_model/style23'
 
 
-def eval_pretrained(image_path, output_path, style, height = 560, width = 900):
+def eval_pretrained(inputpath, humanpath, outpath, style, height = 540, width = 900, 
+                    xpos = 0.5, ypos = 0.5, resizeRatio = 1, alpha = 1, iter = 1):
 
-    input_image = get_resized_image(image_path, height, width)
-    output_image = transform_net(input_image)
+    pdb.set_trace()
+    input_image = get_image(inputpath, height=height, width=width)
+    # remove_bg(humanpath)
+    human_image = get_image('temp/no-bg.png', ratio=resizeRatio, alpha=alpha)
+    input_image.paste(human_image, (0,0), human_image)
+
+    output_image = np.asarray(input_image, np.float32)
+    output_image = np.expand_dims(output_image, 0)
+    for t in range(iter):
+        output_image = transform_net(output_image)
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
@@ -168,9 +201,10 @@ def eval_pretrained(image_path, output_path, style, height = 560, width = 900):
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
         res = sess.run(output_image)
-        save_image(output_path, res)
+        save_image(outpath, res)
 
 if __name__ == '__main__':
-    eval_pretrained(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), int(sys.argv[5]))
+    eval_pretrained(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]), 
+        float(sys.argv[7]), float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10]), int(sys.argv[11]))
     print("Finished.")
 #eval(image_path, output_path, style)

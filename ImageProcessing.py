@@ -167,3 +167,22 @@ def border(img_path, factor=0.02):
 
 
 
+def remove_bg(humanPath, bgRemPath):
+    """ call api from www.remove.bg,
+        and save the result in temp/no-bg.png
+    """
+    return True # for testing
+    response = requests.post(
+        'https://api.remove.bg/v1.0/removebg',
+        files={'image_file': open(humanPath, 'rb')},
+        data={'size': 'auto'},
+        headers={'X-Api-Key': '3z2aehkSXBENXTFmzPkb2y6X'},
+    )
+    if response.status_code == requests.codes.ok:
+        with open(bgRemPath, 'wb') as out:
+            out.write(response.content)
+        return True
+    else:
+        print("Error:", response.status_code, response.text)
+        return False
+

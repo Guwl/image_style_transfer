@@ -31,20 +31,6 @@ def save_image(path, image):
     imageio.imwrite(path, image)
 
 
-def remove_bg(humanPath):
-    humanImage = Image.open(humanPath)
-    response = requests.post(
-        'https://api.remove.bg/v1.0/removebg',
-        files={'image_file': open(humanPath, 'rb')},
-        data={'size': 'auto'},
-        headers={'X-Api-Key': '3z2aehkSXBENXTFmzPkb2y6X'},
-    )
-    if response.status_code == requests.codes.ok:
-        with open('temp/no-bg.png', 'wb') as out:
-            out.write(response.content)
-    else:
-        print("Error:", response.status_code, response.text)
-
 
 def conv2d(x, input_channel, output_channel, kernel_size, stride, mode='REFLECT'):
     with tf.variable_scope('conv'):
@@ -175,10 +161,6 @@ def transform_net(input_image, tarining=True):
 def eval_pretrained(imagePath, outpath, style, height = 540, width = 900, iters = 1):
 
     image = get_image(imagePath, height=height, width=width)
-    # remove_bg(humanpath)
-    # humanImage = get_image('temp/no-bg.png', ratio=resizeRatio, alpha=alpha)
-    # inputImage.paste(humanImage, (0,0), humanImage)
-
     out = np.asarray(image, np.float32)
     out = np.expand_dims(out, 0)
     out = transform_net(out)

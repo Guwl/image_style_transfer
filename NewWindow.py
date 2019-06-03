@@ -358,6 +358,8 @@ class confWidget(QWidget):
         self.label = newLabel(inputPath, self)
         self.setFixedSize(1000, 700)
         self.tempPath = 'temp/config.png'     # where the img shown in confWidget is saved
+        self.tempHumanPath = 'temp/human.png'
+        self.tempBgRemPath = 'temp/no-bg.png'
 
         # open the original input image and human image
         inputImg = Image.open(inputPath)
@@ -480,7 +482,19 @@ class confWidget(QWidget):
             self.change(self.label.getOrigPath())
 
     def toggleBg(self):
-        pass
+        """ when first trun on background removal, call ImageProcessing.remove_bg()
+        """
+        self.bgFlag = not self.bgFlag
+        if not hasattr(self, bgRemImg):
+            self.origHumanImg.save(self.tempHumanPath)
+            if remove_bg(self.tempHumanPath, self.tempBgRemPath):
+                bgRemImg = Image.open(self.tempBgRemPath)
+                self.bgRemImg = bgRemImg.copy()
+                if self.initRatio < 1:
+                    self.origBgRemImg = ImageOps.fit(bgRemImg, (inputImg.width, inputImg.height), Image.ANTIALIAS)
+                else:
+                    self.origBgRemImg = bgRemImg
+
 
     def draw(self):
         """ combine the self.inputImg and self.humanImg based on their relative position,

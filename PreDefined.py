@@ -213,11 +213,7 @@ class myPreDefined(QWidget):
             # self.shareButton.setDisabled(True)
             self.timer.start(100, self)
 
-            xpos = 0.5
-            ypos = 0.5
-            resizeRatio = 1
-            alpha = 1
-            iters = 1
+            iters = self.confWidget.getConfiguration()
             self.ps = subprocess.Popen("python3 eval_pretrained.py " + self.inputPath + " " + self.humanPath + " " + self.outPath + " " + self.style \
                 + " " + str(self.height) + " " + str(self.width) + " " + str(xpos) + " " + str(ypos) + " " + str(resizeRatio) + " " + str(alpha) + " " + str(iters), shell = True)
 

@@ -352,12 +352,26 @@ class editWidget(QWidget):
 
 class confWidget(QWidget):
 
-    def __init__(self, inputImage, humanImage):
+    def __init__(self, inputPath, humanPath):
         super(QWidget, self).__init__()
-        self.label = newLabel(inputImage, self)
-        #self.resize(self.label.getWidth()+160, self.label.getHeight()+100)
-        #self.setMinimumHeight(500)
+        self.label = newLabel(inputPath, self)
         self.setFixedSize(1000, 700)
+        self.tempPath = 'temp/config.png'     # where the img shown in confWidget is saved
+
+        # open the original input image and human image
+        inputImg = Image.open(inputPath)
+        humanImg = Image.open(humanPath)
+        # if the human image is too large, resize it and save it in self.origHumanImage
+        # the "orig" here means the original human image shown in confWidget
+        self.inputImg = inputImg
+        if humanImg.width > inputImg.width or humanImg.height > inputImg.height:
+            self.origHumanImg = ImageOps.fit(humanImg, (inputImg.width, inputImg.height), Image.ANTIALIAS)
+        else:
+            self.origHumanImg = humanImg
+        self.initRatio = self.origHumanImg.width / humanImg.width
+        self.origHumanWidth = self.origHumanImg.width
+        self.origHumanHeight = self.origHumanImg.height
+        self.humanImg = self.origHumanImg
 
         self.xLabel = QLabel()
         self.xLabel.resize(80, 20)
@@ -367,7 +381,6 @@ class confWidget(QWidget):
         self.xSlider.setRange(0, 100)
         self.xSlider.setValue(50)
         self.xSlider.valueChanged.connect(self.slide)
-        self.xpos = self.xSlider.value()
         self.yLabel = QLabel()
         self.yLabel.resize(80, 20)
         self.yLabel.setText("纵向位置")
@@ -376,7 +389,6 @@ class confWidget(QWidget):
         self.ySlider.setRange(0, 100)
         self.ySlider.setValue(50)
         self.ySlider.valueChanged.connect(self.slide)
-        self.ypos = self.ySlider.value()
         self.resizeLabel = QLabel()
         self.resizeLabel.resize(80, 20)
         self.resizeLabel.setText("缩放")
@@ -407,9 +419,11 @@ class confWidget(QWidget):
         self.humanButton = QPushButton('显示/隐藏人像')
         self.humanButton.setFixedSize(90, 30)
         self.humanButton.clicked.connect(self.toggleHuman)
+        self.humanFlag = False
         self.bgButton = QPushButton('显示/隐藏背景')
         self.bgButton.setFixedSize(90, 30)
         self.bgButton.clicked.connect(self.toggleBg)
+        self.bgFlag = True
         self.resetButton = QPushButton('重新设置')
         self.resetButton.setFixedSize(90, 30)
         self.resetButton.clicked.connect(self.reset)
@@ -443,33 +457,50 @@ class confWidget(QWidget):
 
     def slide(self):
         print(self.sender()==self.xSlider)
-        self.xpos = self.xSlider.value()
-        self.ypos = self.ySlider.value()
 
     def click(self, x, y):
-        print(self.label.height)
-        print(self.label.width)
-        print(self.label.origHeight)
-        print(self.label.origWidth)
-        print(x)
-        print(y)
+        # print(self.label.height)
+        # print(self.label.width)
+        # print(self.label.origHeight)
+        # print(self.label.origWidth)
+        # print(x)
+        # print(y)
         self.xSlider.setValue(100.0 * x / self.label.width)
         self.ySlider.setValue(100.0 * y / self.label.height)
+        if self.humanFlag:
+            self.draw()
+
 
     def toggleHuman(self):
-        pass
+        self.humanFlag = not self.humanFlag
+        if self.humanFlag:
+            self.draw()
+
 
     def toggleBg(self):
         pass
-
-    def change(self, image):
-        self.label.changeImage(image)
 
     def alpha(self):
         pass
 
     def resize(self):
         pass
+
+
+    def draw(self):
+        x = self.xSlider.value()
+        y = self.ySlider.value()
+        width = self.humanImg.width
+        height = self.humanImg.height
+        tempImg = self.inputImg
+        tempImg.paste(self.humanImg, (int(x-width/2), 
+            int(y-height/2)), self.humanImg.convert('RGBA'))
+        tempImg.save(self.tempPath)
+        self.change(self.tempPath)
+
+
+    def change(self, image):
+        self.label.changeImage(image)
 
     def reset(self):
         self.xSlider.setValue(50)
@@ -479,4 +510,7 @@ class confWidget(QWidget):
         self.itersSlider.setValue(1)
         self.label.resetCopy()
         self.change(self.label.getOrigPath())
+
+    def getConfiguration(self):
+        return self.itersSlider.value()
 

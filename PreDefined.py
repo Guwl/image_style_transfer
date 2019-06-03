@@ -9,6 +9,7 @@ import os
 from weibo import *
 import requests
 from requests_toolbelt import MultipartEncoder
+from functools import reduce
 
 global flag 
 flag = 0    # The index (start from 1) of the selected label, 0 - nothing selected
@@ -164,16 +165,29 @@ class myPreDefined(QWidget):
         self.VBox.addStretch(0.2)
         self.setLayout(self.VBox)
 
-    def configure(self):
+    def check(self):
+        """ common preconditions of configure() and transfer():
+            first check the input image and the human image,
+            then check if there is configuration, or any image is changed
+        """
         self.inputPath = self.inputPic.getImagePath()
         self.humanPath = self.humanPic.getImagePath()
         if self.inputPath == self.defaultInputPath:
             reply = QMessageBox.warning(self, "错误", "请选择内容图片！", QMessageBox.Ok, QMessageBox.Ok)
-            return
+            return None
         if self.humanPath == self.defaultHumanPath:
             reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
+            return None
+        f = [not hasattr(self, 'confWidget'), self.inputPic.checkChange(), self.humanPic.checkChange()]
+        if reduce((lambda x, y: x or y), f):
+            return True
+        return False
+
+    def configure(self):
+        result = self.check()
+        if result is None:
             return
-        if not hasattr(self, 'confWidget') or self.inputPic.checkChange() or self.humanPic.checkChange():
+        if result == True:
             self.confWidget = confWidget(self.inputPath, self.humanPath)
         self.confWidget.show()
 
@@ -182,15 +196,10 @@ class myPreDefined(QWidget):
         if flag == 0:
             reply = QMessageBox.warning(self, "错误", "请选择一种风格！", QMessageBox.Ok, QMessageBox.Ok)
             return
-        if self.inputPic.getImagePath() == self.defaultInputPath:
-            reply = QMessageBox.warning(self, "错误", "请选择内容图片！", QMessageBox.Ok, QMessageBox.Ok)
+        result = self.check()
+        if result is None:
             return
-        if self.humanPic.getImagePath() == self.defaultHumanPath:
-            reply = QMessageBox.warning(self, "错误", "请选择人物图片! ", QMessageBox.Ok, QMessageBox.Ok)
-            return
-        self.inputPath = self.inputPic.getImagePath()
-        self.humanPath = self.humanPic.getImagePath()
-        if not hasattr(self, 'confWidget') or self.inputPic.checkChange() or self.humanPic.checkChange():
+        if result == True:
             reply = QMessageBox.warning(self, "错误", "请先进行配置! ", QMessageBox.Ok, QMessageBox.Ok)
             self.confWidget = confWidget(self.inputPath, self.humanPath)
             self.confWidget.show()

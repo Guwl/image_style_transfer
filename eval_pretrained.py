@@ -6,7 +6,6 @@ import scipy.misc
 import imageio
 import requests
 from PIL import Image, ImageOps, ImageFile
-from matplotlib import pyplot as plt
 import sys
 
 

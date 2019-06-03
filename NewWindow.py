@@ -8,6 +8,7 @@ import math
 from weibo import *
 import requests
 from requests_toolbelt import MultipartEncoder
+import pdb
 
 class newLabel(QLabel):
 
@@ -39,10 +40,10 @@ class newLabel(QLabel):
     def changeImage(self, image):
         self.imagePath = image
         self.image = QImage(image)
+        self.image = self.image.scaled(800, 600, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.width = self.image.width()
         self.height = self.image.height()
         self.setFixedSize(self.width, self.height)
-        #self.image = self.image.scaled(800, 600, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.pixmap = QPixmap.fromImage(self.image)
         self.setPixmap(self.pixmap)
         self.setAlignment(Qt.AlignCenter)
@@ -361,17 +362,16 @@ class confWidget(QWidget):
         # open the original input image and human image
         inputImg = Image.open(inputPath)
         humanImg = Image.open(humanPath)
+        self.inputImg = inputImg.copy()
+        self.humanImg = humanImg.copy()
         # if the human image is too large, resize it and save it in self.origHumanImage
-        # the "orig" here means the original human image shown in confWidget
-        self.inputImg = inputImg
+        # the "orig" here means the original human image shown in confWidget, resized by self.initRatio
+        # each time we draw the image, both self.humanImg and self.inputImg are used
         if humanImg.width > inputImg.width or humanImg.height > inputImg.height:
             self.origHumanImg = ImageOps.fit(humanImg, (inputImg.width, inputImg.height), Image.ANTIALIAS)
         else:
             self.origHumanImg = humanImg
         self.initRatio = self.origHumanImg.width / humanImg.width
-        self.origHumanWidth = self.origHumanImg.width
-        self.origHumanHeight = self.origHumanImg.height
-        self.humanImg = self.origHumanImg
 
         self.xLabel = QLabel()
         self.xLabel.resize(80, 20)
@@ -459,23 +459,26 @@ class confWidget(QWidget):
         print(self.sender()==self.xSlider)
 
     def click(self, x, y):
-        # print(self.label.height)
-        # print(self.label.width)
-        # print(self.label.origHeight)
-        # print(self.label.origWidth)
-        # print(x)
-        # print(y)
+        """ when clicking the image, catch its loacation,
+            and save in self.xSlider and self.ySlider;
+            if human is visible, call self.draw()
+        """
+        print(x)
+        print(y)
         self.xSlider.setValue(100.0 * x / self.label.width)
         self.ySlider.setValue(100.0 * y / self.label.height)
         if self.humanFlag:
             self.draw()
 
-
     def toggleHuman(self):
+        """ switch between visible / invisible human
+            if visible, call self.draw(), else reset the image
+        """
         self.humanFlag = not self.humanFlag
         if self.humanFlag:
             self.draw()
-
+        else:
+            self.change(self.label.getOrigPath())
 
     def toggleBg(self):
         pass
@@ -486,18 +489,20 @@ class confWidget(QWidget):
     def resize(self):
         pass
 
-
     def draw(self):
-        x = self.xSlider.value()
-        y = self.ySlider.value()
+        """ combine the self.inputImg and self.humanImg based on their relative position,
+            which is defined in self.xSlider and self.ySlider, and then show the result
+        """
+        x = self.xSlider.value() * self.label.width / 100.0
+        y = self.ySlider.value() * self.label.height / 100.0
         width = self.humanImg.width
         height = self.humanImg.height
-        tempImg = self.inputImg
+        tempImg = self.inputImg.copy()
         tempImg.paste(self.humanImg, (int(x-width/2), 
             int(y-height/2)), self.humanImg.convert('RGBA'))
         tempImg.save(self.tempPath)
+        print(dir(tempImg))
         self.change(self.tempPath)
-
 
     def change(self, image):
         self.label.changeImage(image)

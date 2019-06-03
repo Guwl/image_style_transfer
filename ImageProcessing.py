@@ -1,4 +1,5 @@
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
+import requests
 
 
 # 比例 a.1:1 b.4:3 c.3:4 d.16:9 e.9:16
@@ -171,12 +172,13 @@ def remove_bg(humanPath, bgRemPath):
     """ call api from www.remove.bg,
         and save the result in temp/no-bg.png
     """
-    return True # for testing
+    # return False # for testing
     response = requests.post(
         'https://api.remove.bg/v1.0/removebg',
         files={'image_file': open(humanPath, 'rb')},
         data={'size': 'auto'},
-        headers={'X-Api-Key': '3z2aehkSXBENXTFmzPkb2y6X'},
+        # headers={'X-Api-Key': '3z2aehkSXBENXTFmzPkb2y6X'},
+        headers={'X-Api-Key': '9f2BphK17BCtLmYWqV4EAWWT'},
     )
     if response.status_code == requests.codes.ok:
         with open(bgRemPath, 'wb') as out:

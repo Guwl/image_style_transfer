@@ -494,6 +494,8 @@ class confWidget(QWidget):
             else:
                 self.origBgRemImg = None
                 self.bgRemImg = None
+                reply = QMessageBox.warning(self, "错误", "无法扣除背景，请确定含有人物，并检查网络设置", QMessageBox.Ok, QMessageBox.Ok)
+                return
         self.draw()
 
 
@@ -528,8 +530,8 @@ class confWidget(QWidget):
         # calculate relative position
         x = self.xSlider.value() / 100.0 * self.inputImg.width
         y = self.ySlider.value() / 100.0 * self.inputImg.height
-        width = self.imgUsed.width
-        height = self.imgUsed.height
+        width = imgUsed.width
+        height = imgUsed.height
         # combine two images
         tempImg = self.inputImg.copy()
         tempImg.paste(imgUsed, (int(x-width/2), 

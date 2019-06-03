@@ -4,7 +4,6 @@ import numpy as np
 import scipy.io
 import scipy.misc
 import imageio
-import requests
 from PIL import Image, ImageOps, ImageFile
 import sys
 
@@ -29,7 +28,6 @@ def save_image(path, image):
     image = image[0]  # the image
     image = np.clip(image, 0, 255).astype(np.uint8)
     imageio.imwrite(path, image)
-
 
 
 def conv2d(x, input_channel, output_channel, kernel_size, stride, mode='REFLECT'):

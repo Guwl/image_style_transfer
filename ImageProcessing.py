@@ -1,4 +1,4 @@
-from PIL import Image, ImageEnhance, ImageDraw, ImageFont
+from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
 
 # 比例 a.1:1 b.4:3 c.3:4 d.16:9 e.9:16

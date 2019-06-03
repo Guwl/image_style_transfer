@@ -361,10 +361,10 @@ class confWidget(QWidget):
 
         # open the original input image and human image
         inputImg = Image.open(inputPath)
-        humanImg = Image.open(humanPath)
+        humanImg = Image.open(humanPath).convert('RGBA')
         self.inputImg = inputImg.copy()
         self.humanImg = humanImg.copy()
-        # if the human image is too large, resize it and save it in self.origHumanImage
+        # if the human image is too large, resize it and save it in self.origHumanImg
         # the "orig" here means the original human image shown in confWidget, resized by self.initRatio
         # each time we draw the image, both self.humanImg and self.inputImg are used
         if humanImg.width > inputImg.width or humanImg.height > inputImg.height:
@@ -380,7 +380,7 @@ class confWidget(QWidget):
         self.xSlider = QSlider(Qt.Horizontal)
         self.xSlider.setRange(0, 100)
         self.xSlider.setValue(50)
-        self.xSlider.valueChanged.connect(self.slide)
+        self.xSlider.valueChanged.connect(self.selectPos)
         self.yLabel = QLabel()
         self.yLabel.resize(80, 20)
         self.yLabel.setText("纵向位置")
@@ -388,16 +388,15 @@ class confWidget(QWidget):
         self.ySlider = QSlider(Qt.Horizontal)
         self.ySlider.setRange(0, 100)
         self.ySlider.setValue(50)
-        self.ySlider.valueChanged.connect(self.slide)
+        self.ySlider.valueChanged.connect(self.selectPos)
         self.resizeLabel = QLabel()
         self.resizeLabel.resize(80, 20)
         self.resizeLabel.setText("缩放")
         self.resizeLabel.setAlignment(Qt.AlignLeft)
         self.resizeSlider = QSlider(Qt.Horizontal)
-        self.resizeSlider.setRange(0.1, 2)
-        self.resizeSlider.setSingleStep(0.1)
-        self.resizeSlider.setValue(1)
-        self.resizeSlider.valueChanged.connect(self.slide)
+        self.resizeSlider.setRange(1, 20)
+        self.resizeSlider.setValue(10)
+        self.resizeSlider.valueChanged.connect(self.resize)
         self.alhpaLabel = QLabel()
         self.alhpaLabel.resize(80, 20)
         self.alhpaLabel.setText("透明度")
@@ -406,7 +405,7 @@ class confWidget(QWidget):
         self.alphaSlider.setRange(0, 255)
         self.alphaSlider.setSingleStep(1)
         self.alphaSlider.setValue(255)
-        self.alphaSlider.valueChanged.connect(self.slide)
+        self.alphaSlider.valueChanged.connect(self.alpha)
         self.itersLabel = QLabel()
         self.itersLabel.resize(80, 20)
         self.itersLabel.setText("计算次数")
@@ -415,7 +414,6 @@ class confWidget(QWidget):
         self.itersSlider.setRange(1, 5)
         self.itersSlider.setSingleStep(1)
         self.itersSlider.setValue(1)
-        self.itersSlider.valueChanged.connect(self.slide)
         self.humanButton = QPushButton('显示/隐藏人像')
         self.humanButton.setFixedSize(90, 30)
         self.humanButton.clicked.connect(self.toggleHuman)
@@ -455,18 +453,33 @@ class confWidget(QWidget):
         #self.hbox.addStretch(1)
         self.setLayout(self.hbox)
 
-    def slide(self):
-        print(self.sender()==self.xSlider)
-
     def click(self, x, y):
         """ when clicking the image, catch its loacation,
             and save in self.xSlider and self.ySlider;
             if human is visible, call self.draw()
         """
-        print(x)
-        print(y)
+        # All images will be resized before showing, and here we extract the "percentage of the inputImg"
+        print(x, y)
         self.xSlider.setValue(100.0 * x / self.label.width)
         self.ySlider.setValue(100.0 * y / self.label.height)
+        if self.humanFlag:
+            self.draw()
+
+    def selectPos(self):
+        if self.humanFlag:
+            self.draw()
+
+    def resize(self):
+        width = int(self.origHumanImg.width * self.resizeSlider.value() / 10.0)
+        height = int(self.origHumanImg.height * self.resizeSlider.value() / 10.0)
+        self.humanImg = ImageOps.fit(self.origHumanImg.copy(), (width, height), Image.ANTIALIAS)
+        if self.humanFlag:
+            self.draw()
+
+    def alpha(self):
+        _, _, _, a = self.humanImg.split()
+        a = a.point(lambda x: self.alphaSlider.value() if x > 0 else 0)
+        self.humanImg.putalpha(a)
         if self.humanFlag:
             self.draw()
 
@@ -483,25 +496,18 @@ class confWidget(QWidget):
     def toggleBg(self):
         pass
 
-    def alpha(self):
-        pass
-
-    def resize(self):
-        pass
-
     def draw(self):
         """ combine the self.inputImg and self.humanImg based on their relative position,
             which is defined in self.xSlider and self.ySlider, and then show the result
         """
-        x = self.xSlider.value() * self.label.width / 100.0
-        y = self.ySlider.value() * self.label.height / 100.0
+        x = self.xSlider.value() / 100.0 * self.inputImg.width
+        y = self.ySlider.value() / 100.0 * self.inputImg.height
         width = self.humanImg.width
         height = self.humanImg.height
         tempImg = self.inputImg.copy()
         tempImg.paste(self.humanImg, (int(x-width/2), 
-            int(y-height/2)), self.humanImg.convert('RGBA'))
+            int(y-height/2)), self.humanImg)
         tempImg.save(self.tempPath)
-        print(dir(tempImg))
         self.change(self.tempPath)
 
     def change(self, image):
@@ -510,10 +516,11 @@ class confWidget(QWidget):
     def reset(self):
         self.xSlider.setValue(50)
         self.ySlider.setValue(50)
-        self.resizeSlider.setValue(1)
+        self.resizeSlider.setValue(10)
         self.alphaSlider.setValue(255)
         self.itersSlider.setValue(1)
-        self.label.resetCopy()
+        self.humanImg = self.origHumanImg.copy()
+        # self.label.resetCopy()
         self.change(self.label.getOrigPath())
 
     def getConfiguration(self):
